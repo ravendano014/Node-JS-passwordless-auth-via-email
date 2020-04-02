@@ -4,6 +4,7 @@ const Joi = require("@hapi/joi")
 const bcrypt = require("bcrypt")
 const jsonwebtoken = require("jsonwebtoken")
 const verifyToken = require("../../middleware/verifyToken")
+const crypto = require("crypto")
 
 /* Sign in with an email and password, receive a JWT */
 router.post("/login", async (request, response) => {
@@ -30,7 +31,7 @@ router.post("/login", async (request, response) => {
 
         if (isPasswordCorrect) {
             /* Add a new valid session to the database */
-            const sessionId = crypto.randomBytes(32).toString()
+            const sessionId = crypto.randomBytes(32).toString("hex")
             user.sessions.push(sessionId)
             await user.save()
 
@@ -47,7 +48,9 @@ router.post("/login", async (request, response) => {
             }, process.env.TOKEN_SECRET)
 
             /* Respond with JWT */
-            response.json(token)
+            response.json({
+                token
+            })
         } else {
             response.status(401).send("Wrong email address or password")
         }

@@ -3,6 +3,7 @@ const Joi = require("@hapi/joi")
 const bcrypt = require("bcrypt")
 const verifyToken = require("../../middleware/verifyToken")
 const User = require("../../models/User")
+const crypto = require("crypto")
 
 /* Allow the signed in user to change their old password */
 router.post("/change_password", verifyToken, async (request, response) => {
@@ -52,7 +53,7 @@ router.post("/forgot_password", async (request, response) => {
 
     if (user) {
         /* Create a password reset token that expires in 6 hours */
-        user.resetPasswordToken = crypto.randomBytes(32).toString()
+        user.resetPasswordToken = crypto.randomBytes(32).toString("hex")
         user.resetPasswordTokenExpires = Date.now() + 2.16e7
         await user.save()
 
@@ -82,7 +83,7 @@ router.post("/reset_password", async (request, response) => {
     const query = {
         resetPasswordToken: request.body.resetPasswordToken,
         resetPasswordTokenExpires: {
-            $lt: Date.now()
+            $gte: Date.now()
         }
     }
 
@@ -93,7 +94,13 @@ router.post("/reset_password", async (request, response) => {
         const salt = await bcrypt.genSalt(10)
         const hashedNewPassword = await bcrypt.hash(request.body.newPassword, salt)
 
+        /* Save to database */
         user.password = hashedNewPassword
+        await user.save()
+
+        /* Now reset the token and expiration */
+        user.resetPasswordToken = null
+        user.resetPasswordTokenExpires = Date.now()
         await user.save()
 
         response.send(`Password for ${user.email} successfully reset`)

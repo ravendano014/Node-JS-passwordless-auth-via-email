@@ -3,9 +3,11 @@ const User = require("../models/User")
 
 /* Make sure that the JWT's user exists and session is not expired */
 module.exports = async function (request, response, next) {
-    const auth = request.header.authorization.replace("Bearer ", "")
+    let auth = request.headers.authorization
 
     if (auth) {
+        auth = auth.replace("Bearer ", "")
+
         /* Decode the JWT to get information inside */
         const body = jsonwebtoken.verify(auth, process.env.TOKEN_SECRET)
 
