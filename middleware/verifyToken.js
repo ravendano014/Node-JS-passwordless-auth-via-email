@@ -11,8 +11,6 @@ module.exports = async function (request, response, next) {
         /* Decode the JWT to get information inside */
         const body = jsonwebtoken.verify(auth, process.env.TOKEN_SECRET)
 
-        console.log(body)
-
         const query = {
             email: body.email
         }
