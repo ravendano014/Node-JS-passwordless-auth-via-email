@@ -8,9 +8,15 @@ const schema = new mongoose.Schema({
         unique: true
     },
 
-    password: {
+    loginCode: {
         type: String,
-        required: true
+        default: null
+    },
+
+    loginCodeExpires: {
+        type: Date,
+        required: true,
+        default: Date.now
     },
 
     /* For expiring JWTs */
@@ -18,18 +24,6 @@ const schema = new mongoose.Schema({
         type: Array,
         required: true,
         default: []
-    },
-
-    /* Password resets */
-    resetPasswordToken: {
-        type: String,
-        default: null,
-    },
-
-    resetPasswordTokenExpires: {
-        type: Date,
-        required: true,
-        default: Date.now
     },
 })
 

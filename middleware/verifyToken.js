@@ -11,6 +11,8 @@ module.exports = async function (request, response, next) {
         /* Decode the JWT to get information inside */
         const body = jsonwebtoken.verify(auth, process.env.TOKEN_SECRET)
 
+        console.log(body)
+
         const query = {
             email: body.email
         }
@@ -33,7 +35,7 @@ module.exports = async function (request, response, next) {
                 response.status(401).send("Authorization expired")
             }
         } else {
-            response.status(401).send("Authorization expired")
+            response.status(401).send("Authorization does not exist")
         }
     } else {
         response.status(401).send("Authorization required")

@@ -6,11 +6,10 @@ const jsonwebtoken = require("jsonwebtoken")
 const verifyToken = require("../../middleware/verifyToken")
 const crypto = require("crypto")
 
-/* Sign in with an email and password, receive a JWT */
-router.post("/login", async (request, response) => {
+/* Request an email code to sign in with (and print to console) */
+router.post("/request_login", async (request, response) => {
     const schema = Joi.object({
-        email: Joi.string().required().email(),
-        password: Joi.string().required()
+        email: Joi.string().required().email()
     })
 
     const { error } = schema.validate(request.body)
@@ -18,52 +17,32 @@ router.post("/login", async (request, response) => {
         return response.status(400).send(error.details[0].message)
     }
 
-    /* Search for a user */
+    /* Search for a matching user */
     const query = {
-        email: request.body.email
+        email: request.body.email,
     }
 
     const user = await User.findOne(query)
 
     if (user) {
-        /* Compare passwords via bcrypt */
-        const isPasswordCorrect = await bcrypt.compare(request.body.password, user.password)
+        /* Create a new code that expires in 1 hour */
+        user.loginCode = crypto.randomBytes(32).toString("hex")
+        user.loginCodeExpires = Date.now() + 3.6e6
+        await user.save()
 
-        if (isPasswordCorrect) {
-            /* Add a new valid session to the database */
-            const sessionId = crypto.randomBytes(32).toString("hex")
-            user.sessions.push(sessionId)
-            await user.save()
-
-            /*
-             *
-             * Sign the JWT with the user's email address and session ID.
-             * The session ID will allow us to revoke JWTs later on.
-             * By default, the JWT also has an "iat" field.
-             *
-             */
-            const token = jsonwebtoken.sign({
-                email: user.email,
-                sessionId
-            }, process.env.TOKEN_SECRET)
-
-            /* Respond with JWT */
-            response.json({
-                token
-            })
-        } else {
-            response.status(401).send("Wrong email address or password")
-        }
-    } else {
-        response.status(401).send("Wrong email address or password")
+        // TODO: Send an email via Sendgrid or something containing the login code
+        // E.g. https://frontend.com/login?loginCode=be09de8717203adb3dee9522fe6ea1b9
+        console.log(`New login code for ${user.email}: ${user.loginCode}`)
     }
+
+    response.send("Please check your email inbox and spam folder")
 })
 
-/* Create a new user with a unique email and a password */
-router.post("/signup", async (request, response) => {
+/* Sign in with an email and temporary code */
+router.post("/login", async (request, response) => {
     const schema = Joi.object({
         email: Joi.string().required().email(),
-        password: Joi.string().required()
+        loginCode: Joi.string().required()
     })
 
     const { error } = schema.validate(request.body)
@@ -71,13 +50,62 @@ router.post("/signup", async (request, response) => {
         return response.status(400).send(error.details[0].message)
     }
 
-    /* Store password securely with salt and hash */
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(request.body.password, salt)
+    /* Check if the login code is a match and is not expired */
+    const query = {
+        email: request.body.email,
+        loginCode: request.body.loginCode,
+        loginCodeExpires: {
+            $gte: Date.now()
+        }
+    }
+
+    const user = await User.findOne(query)
+
+    if (user) {
+        /* Add a new valid session to the database */
+        const sessionId = crypto.randomBytes(32).toString("hex")
+        user.sessions.push(sessionId)
+        await user.save()
+
+        /*
+         *
+         * Sign the JWT with the user's email address and session ID.
+         * The session ID will allow us to revoke JWTs later on.
+         * By default, the JWT also has an "iat" field.
+         *
+         */
+        const token = jsonwebtoken.sign({
+            email: user.email,
+            sessionId
+        }, process.env.TOKEN_SECRET)
+
+        /* Invalidate the last login code */
+        user.loginCode = null
+        user.loginCodeExpires = Date.now()
+        await user.save()
+
+        /* Respond with JWT */
+        response.json({
+            token
+        })
+    } else {
+        response.status(401).send("This login code is either expired or invalid")
+    }
+})
+
+/* Create a new user with a unique email address  */
+router.post("/signup", async (request, response) => {
+    const schema = Joi.object({
+        email: Joi.string().required().email(),
+    })
+
+    const { error } = schema.validate(request.body)
+    if (error) {
+        return response.status(400).send(error.details[0].message)
+    }
 
     const newUser = new User({
         email: request.body.email,
-        password: hashedPassword
     })
 
     /* Build indexes to ensure unique constraint is enforced */
@@ -88,7 +116,7 @@ router.post("/signup", async (request, response) => {
         const user = await newUser.save()
         await user.save()
 
-        response.send(`Signed up as ${user.email}`)
+        response.send(`Success; Please sign in to confirm your email address`)
     } catch (e) {
         response.status(400).send(`Could not sign up as ${request.body.email}`)
     }

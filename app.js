@@ -16,7 +16,6 @@ mongoose.set("useFindAndModify", false)
 
 /* Routes */
 app.use("/api/auth/", require("./routes/auth/auth"))
-app.use("/api/auth/", require("./routes/auth/password"))
 app.use("/api/auth/", require("./routes/auth/whoami"))
 
 /* Port */
