@@ -116,7 +116,7 @@ router.post("/signup", async (request, response) => {
         const user = await newUser.save()
         await user.save()
 
-        response.send(`Success; Please sign in to confirm your email address`)
+        response.send(`Success; Please sign in to confirm your account`)
     } catch (e) {
         response.status(400).send(`Could not sign up as ${request.body.email}`)
     }

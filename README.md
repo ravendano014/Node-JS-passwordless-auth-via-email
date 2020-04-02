@@ -1,6 +1,6 @@
-# Better user auth for Node JS
+# Passwordless user auth example for Node JS
 
-This is some example/boilerplate code for creating an API with standard user auth using JWT (Javascript Web Tokens).
+This is some example/boilerplate code for creating an API with passwordless auth using JWTs, similar to how Notion.so works. 
 
 Create a free MongoDB Atlas Cluster: https://www.mongodb.com/cloud
 1. Create a database user
@@ -9,11 +9,9 @@ Create a free MongoDB Atlas Cluster: https://www.mongodb.com/cloud
 
 ## Features/user stories:
 - Register a new account
-- Login and receive a JWT
+- Request a login code
+- Login with a login code
 - Sign out of all sessions (revokes JWTs)
-- Change password while signed in
-- Forgot password (send a reset link)
-- Reset password (with a reset link)
 - `verifyToken` for making sure a user is logged in
 
 ## Environment variables to set:
