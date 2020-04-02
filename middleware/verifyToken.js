@@ -1,8 +1,7 @@
 const jsonwebtoken = require("jsonwebtoken")
 const User = require("../models/User")
-const responseHelper = require("../helpers/responseHelper")
 
-/* Make sure that the JWT's user exists and session is valid */
+/* Make sure that the JWT's user exists and session is not expired */
 module.exports = async function (request, response, next) {
     const auth = request.header.authorization.replace("Bearer ", "")
 
@@ -16,7 +15,7 @@ module.exports = async function (request, response, next) {
 
         const user = await User.findOne(query)
 
-        /* Check if the user exists, and if the session is valid */
+        /* Check if the user exists, and if the session is not expired */
         if (user) {
             if (user.sessions.includes(body.sessionId)) {
                 /*
@@ -32,7 +31,7 @@ module.exports = async function (request, response, next) {
                 response.status(401).send("Authorization expired")
             }
         } else {
-            response.status(401).send("Authorization invalid")
+            response.status(401).send("Authorization expired")
         }
     } else {
         response.status(401).send("Authorization required")
