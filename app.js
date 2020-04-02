@@ -15,12 +15,9 @@ mongoose.set('useCreateIndex', true)
 mongoose.set("useFindAndModify", false)
 
 /* Routes */
-app.use("/api/auth/", require("./routes/auth/signup"))
-app.use("/api/auth/", require("./routes/auth/login"))
-app.use("/api/auth/", require("./routes/auth/whoami"))
-app.use("/api/auth/", require("./routes/auth/signout"))
-app.use("/api/auth/", require("./routes/auth/email"))
+app.use("/api/auth/", require("./routes/auth/auth"))
 app.use("/api/auth/", require("./routes/auth/password"))
+app.use("/api/auth/", require("./routes/auth/whoami"))
 
 /* Port */
 const port = process.env.PORT || 5000
