@@ -29,8 +29,8 @@ router.post("/login", async (request, response) => {
         const isPasswordCorrect = await bcrypt.compare(request.body.password, user.password)
 
         if (isPasswordCorrect) {
-            /* Add a session */
-            const sessionId = crypto.randomBytes(20).toString("hex")
+            /* Add a new valid session to the database */
+            const sessionId = crypto.randomBytes(32).toString()
             user.sessions.push(sessionId)
             await user.save()
 
